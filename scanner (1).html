@@ -1,0 +1,347 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#0d0f0e">
+<title>Scanner Absensi</title>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@500;700;800&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#0d0f0e; --card:#181b1a; --line:rgba(255,255,255,.10); --ink:#f4f6f5; --muted:#9aa3a0;
+  --lime:#c8f53c; --ok:#22c55e; --warn:#f59e0b; --err:#ef4444;
+  box-sizing:border-box; padding-top:env(safe-area-inset-top,0px); padding-bottom:env(safe-area-inset-bottom,0px);
+}
+*{box-sizing:border-box}
+html,body{margin:0;background:var(--bg);color:var(--ink);font-family:'Plus Jakarta Sans',system-ui,-apple-system,'Segoe UI',Roboto,sans-serif}
+body{min-height:100vh;padding:14px}
+.wrap{max-width:560px;margin:0 auto;display:grid;gap:12px}
+header{display:flex;align-items:center;justify-content:space-between;gap:10px}
+h1{margin:0;font-size:1.15rem;font-weight:800}
+h1 small{display:block;font-size:.72rem;font-weight:500;color:var(--muted);margin-top:2px}
+.chip{border:1px solid var(--line);background:var(--card);color:var(--ink);border-radius:999px;padding:7px 12px;font:700 12px inherit;font-family:inherit;cursor:pointer;display:inline-flex;gap:7px;align-items:center}
+.chip i{width:9px;height:9px;border-radius:50%;background:var(--warn);display:inline-block}
+.chip.ready i{background:var(--ok)}
+.seg{display:grid;grid-template-columns:1fr 1fr;gap:6px;background:var(--card);border:1px solid var(--line);border-radius:14px;padding:5px}
+.seg button{border:0;border-radius:10px;padding:11px;font:800 14px inherit;font-family:inherit;background:transparent;color:var(--muted);cursor:pointer}
+.seg button.on{background:var(--lime);color:#10140a}
+.cam{position:relative;background:#000;border-radius:18px;overflow:hidden;border:1px solid var(--line);min-height:260px}
+#reader{width:100%}
+#reader video{width:100%!important;display:block;object-fit:cover}
+.camMsg{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;text-align:center;padding:20px;color:var(--muted);font-size:.9rem;line-height:1.5;pointer-events:none}
+.camBar{display:flex;gap:8px;margin-top:8px}
+.btn{flex:1;border:1px solid var(--line);background:var(--card);color:var(--ink);border-radius:12px;padding:11px 12px;font:700 13px inherit;font-family:inherit;cursor:pointer}
+.btn.pri{background:var(--lime);color:#10140a;border-color:var(--lime)}
+.btn:disabled{opacity:.45;cursor:not-allowed}
+#res{border-radius:18px;padding:16px;border:1px solid var(--line);background:var(--card);display:grid;gap:4px;min-height:112px;align-content:center;text-align:center;transition:background .2s,border-color .2s}
+#res[data-k="ok"]{background:rgba(34,197,94,.16);border-color:var(--ok)}
+#res[data-k="dup"]{background:rgba(245,158,11,.16);border-color:var(--warn)}
+#res[data-k="err"]{background:rgba(239,68,68,.16);border-color:var(--err)}
+#res[data-k="busy"]{border-color:var(--lime)}
+#resT{font-size:1.05rem;font-weight:800}
+#resN{font-size:1.35rem;font-weight:800;line-height:1.2;word-break:break-word}
+#resS{font-size:.85rem;color:var(--muted)}
+form.man{display:flex;gap:8px}
+.usbHint{font-size:.78rem;color:var(--muted);margin-top:-4px;line-height:1.45}
+form.man input{flex:1;min-width:0;background:var(--card);border:1px solid var(--line);color:var(--ink);border-radius:12px;padding:12px;font:600 15px inherit;font-family:inherit}
+.hist{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:6px 12px}
+.hist h2{font-size:.78rem;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);margin:8px 0}
+.hist ul{list-style:none;margin:0;padding:0}
+.hist li{display:grid;grid-template-columns:auto 1fr auto;gap:10px;align-items:center;padding:9px 0;border-top:1px solid var(--line);font-size:.86rem}
+.hist li:first-child{border-top:0}
+.hist .tm{color:var(--muted);font-variant-numeric:tabular-nums}
+.hist .nm{font-weight:700;word-break:break-word}
+.hist .nm small{display:block;color:var(--muted);font-weight:500}
+.tag{font-size:.7rem;font-weight:800;border-radius:999px;padding:3px 9px}
+.tag.ok{background:rgba(34,197,94,.2);color:#6ee7a0}.tag.dup{background:rgba(245,158,11,.2);color:#fcd34d}.tag.err{background:rgba(239,68,68,.2);color:#fca5a5}
+.empty{color:var(--muted);font-size:.85rem;padding:10px 0 12px}
+dialog{border:1px solid var(--line);background:#161918;color:var(--ink);border-radius:18px;padding:0;width:min(440px,94vw)}
+dialog::backdrop{background:rgba(0,0,0,.65)}
+.dl{padding:18px;display:grid;gap:10px}
+.dl h3{margin:0;font-size:1.05rem}
+.dl p{margin:0;color:var(--muted);font-size:.84rem;line-height:1.5}
+.dl label{display:grid;gap:5px;font-size:.78rem;font-weight:700;color:var(--muted)}
+.dl input{background:#0f1211;border:1px solid var(--line);color:var(--ink);border-radius:10px;padding:11px;font:600 14px inherit;font-family:inherit;width:100%}
+.dl .row{display:flex;gap:8px;flex-wrap:wrap}
+#cfgMsg{font-size:.82rem;min-height:1.2em;font-weight:700}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>Scanner Absensi<small id="subT">Arahkan kode QR siswa ke kamera</small></h1>
+    <button class="chip" id="chip" type="button"><i></i><span id="chipT">Belum diatur</span></button>
+  </header>
+
+  <div class="seg" role="group" aria-label="Mode absensi">
+    <button type="button" id="mMasuk" class="on">Absen Masuk</button>
+    <button type="button" id="mPulang">Absen Pulang</button>
+  </div>
+
+  <div>
+    <div class="cam"><div id="reader"></div><div class="camMsg" id="camMsg">Kamera belum dimulai</div></div>
+    <div class="camBar">
+      <button class="btn pri" type="button" id="bCam">Mulai kamera</button>
+      <button class="btn" type="button" id="bSwap">Ganti kamera</button>
+    </div>
+  </div>
+
+  <div id="res" data-k="idle" aria-live="polite">
+    <div id="resT">Siap memindai</div>
+    <div id="resN"></div>
+    <div id="resS">Hasil scan akan tampil di sini.</div>
+  </div>
+
+  <form class="man" id="manual" autocomplete="off">
+    <input id="nisn" inputmode="numeric" placeholder="Atau ketik NISN lalu tekan Catat" aria-label="NISN">
+    <button class="btn pri" type="submit" style="flex:0 0 auto">Catat</button>
+  </form>
+  <div class="usbHint">Memakai scanner USB? Biarkan kursor tetap di kolom NISN di atas, lalu scan kartu/QR siswa. Hasilnya tercatat otomatis.</div>
+
+  <section class="hist">
+    <h2>Riwayat scan (perangkat ini)</h2>
+    <ul id="hist"></ul>
+    <div class="empty" id="histEmpty">Belum ada scan.</div>
+  </section>
+</div>
+
+<dialog id="dlg">
+  <div class="dl">
+    <h3>Pengaturan Scanner</h3>
+    <p>Isi satu kali saja. Data tersimpan di browser HP/laptop ini.</p>
+    <label>Alamat Web App (dari Apps Script, berakhiran /exec)
+      <input id="cfgUrl" type="url" placeholder="https://script.google.com/macros/s/.../exec" autocomplete="off">
+    </label>
+    <label>Kode petugas (sama dengan SCANNER_KEY di GS)
+      <input id="cfgKey" type="password" placeholder="kode rahasia" autocomplete="off">
+    </label>
+    <div id="cfgMsg"></div>
+    <div class="row">
+      <button class="btn" type="button" id="cfgTest">Tes koneksi</button>
+      <button class="btn pri" type="button" id="cfgSave">Simpan</button>
+      <button class="btn" type="button" id="cfgClose">Tutup</button>
+    </div>
+  </div>
+</dialog>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html5-qrcode/2.3.8/html5-qrcode.min.js"></script>
+<script>
+(function () {
+  'use strict';
+  var $ = function (id) { return document.getElementById(id); };
+  var LS = { url: 'scan_url', key: 'scan_key', mode: 'scan_mode' };
+  function lsGet(k) { try { return localStorage.getItem(k) || ''; } catch (e) { return ''; } }
+  function lsSet(k, v) { try { localStorage.setItem(k, v); } catch (e) {} }
+
+  var cfg = { url: lsGet(LS.url), key: lsGet(LS.key) };
+  var qs = new URLSearchParams(location.search);
+  var mode = (qs.get('mode') === 'pulang' || qs.get('mode') === 'masuk') ? qs.get('mode') : (lsGet(LS.mode) === 'pulang' ? 'pulang' : 'masuk');
+
+  /* ---------- tampilan ---------- */
+  function setMode(m) {
+    mode = m; lsSet(LS.mode, m);
+    $('mMasuk').className = m === 'masuk' ? 'on' : '';
+    $('mPulang').className = m === 'pulang' ? 'on' : '';
+  }
+  function configured() { return !!(cfg.url && cfg.key); }
+  function refreshChip() {
+    $('chip').className = 'chip' + (configured() ? ' ready' : '');
+    $('chipT').textContent = configured() ? 'Siap' : 'Belum diatur';
+  }
+  var resTimer = null;
+  function showRes(kind, title, name, sub, autoIdle) {
+    clearTimeout(resTimer);
+    $('res').setAttribute('data-k', kind);
+    $('resT').textContent = title; $('resN').textContent = name || ''; $('resS').textContent = sub || '';
+    if (autoIdle) resTimer = setTimeout(function () { showRes('idle', 'Siap memindai', '', 'Arahkan kode QR siswa ke kamera.'); }, 7000);
+  }
+  var hist = [];
+  function addHist(h) {
+    hist.unshift(h); if (hist.length > 10) hist.pop();
+    var ul = $('hist'); ul.innerHTML = '';
+    hist.forEach(function (x) {
+      var li = document.createElement('li');
+      var tm = document.createElement('span'); tm.className = 'tm'; tm.textContent = x.jam;
+      var nm = document.createElement('span'); nm.className = 'nm'; nm.textContent = x.nama;
+      var sm = document.createElement('small'); sm.textContent = x.sub; nm.appendChild(sm);
+      var tg = document.createElement('span'); tg.className = 'tag ' + x.k; tg.textContent = x.tag;
+      li.appendChild(tm); li.appendChild(nm); li.appendChild(tg); ul.appendChild(li);
+    });
+    $('histEmpty').style.display = 'none';
+  }
+
+  /* ---------- suara & getar ---------- */
+  var ac = null;
+  function beep(kind) {
+    try {
+      ac = ac || new (window.AudioContext || window.webkitAudioContext)();
+      var o = ac.createOscillator(), g = ac.createGain();
+      o.connect(g); g.connect(ac.destination); o.type = 'sine';
+      o.frequency.value = kind === 'ok' ? 880 : (kind === 'dup' ? 520 : 220);
+      g.gain.value = 0.15; o.start(); o.stop(ac.currentTime + (kind === 'ok' ? 0.12 : 0.28));
+    } catch (e) {}
+    try { if (navigator.vibrate) navigator.vibrate(kind === 'ok' ? 60 : [80, 60, 80]); } catch (e) {}
+  }
+
+  /* ---------- panggilan ke server ---------- */
+  function callApi(params) {
+    return new Promise(function (resolve) {
+      var base = String(cfg.url || '').trim();
+      if (!/^https:\/\/script\.google\.com\/.+\/exec$/.test(base.split('?')[0].split('#')[0])) {
+        return resolve({ success: false, message: 'Alamat Web App belum benar. Buka Pengaturan dan isi alamat yang berakhiran /exec.' });
+      }
+      var u = new URL(base.split('?')[0].split('#')[0]);
+      u.searchParams.set('key', cfg.key);
+      Object.keys(params).forEach(function (k) { u.searchParams.set(k, params[k]); });
+      u.searchParams.set('_', String(Date.now()));
+      var ctl = (typeof AbortController !== 'undefined') ? new AbortController() : null;
+      var t = setTimeout(function () { if (ctl) ctl.abort(); }, 20000);
+      fetch(u.toString(), ctl ? { signal: ctl.signal } : {})
+        .then(function (r) { return r.text(); })
+        .then(function (txt) {
+          clearTimeout(t);
+          try { resolve(JSON.parse(txt)); }
+          catch (e) { resolve({ success: false, message: 'Server tidak mengembalikan data. Pastikan Web App dibagikan ke "Siapa saja" (Anyone) dan sudah di-deploy versi baru.' }); }
+        })
+        .catch(function () {
+          clearTimeout(t);
+          resolve({ success: false, message: 'Tidak bisa terhubung ke server. Periksa internet dan akses Web App ("Siapa saja").' });
+        });
+    });
+  }
+
+  /* ---------- memproses satu kode ---------- */
+  var busy = false, lastCode = '', lastAt = 0;
+  function extractNisn(raw) {
+    var s = String(raw || '').trim();
+    var m = s.match(/\d{4,}/);
+    return m ? m[0] : s;
+  }
+  function handle(raw, manual) {
+    var nisn = extractNisn(raw);
+    if (!nisn) return;
+    if (!configured()) { openDlg('Isi pengaturan terlebih dahulu.'); return; }
+    var now = Date.now();
+    if (!manual && nisn === lastCode && now - lastAt < 4000) return;   // kode sama terbaca berulang
+    if (busy) return;
+    busy = true; lastCode = nisn; lastAt = now;
+    showRes('busy', 'Memproses...', '', 'NISN ' + nisn);
+    callApi({ api: 'scan', nisn: nisn, mode: mode }).then(function (r) {
+      busy = false; lastAt = Date.now(); setTimeout(focusNisn, 50);
+      var jam = r.jam || new Date().toTimeString().slice(0, 8);
+      if (r.success && !r.duplicate) {
+        showRes('ok', (mode === 'pulang' ? 'PULANG tercatat' : 'HADIR tercatat'), r.nama, (r.kelas || '') + ' | ' + jam, true);
+        addHist({ k: 'ok', jam: jam, nama: r.nama, sub: r.kelas || '', tag: r.status || (mode === 'pulang' ? 'Pulang' : 'Hadir') });
+        beep('ok');
+      } else if (r.success && r.duplicate) {
+        showRes('dup', 'Sudah tercatat', r.nama, (r.kelas || '') + ' | ' + (r.status || '') + ' pukul ' + jam, true);
+        addHist({ k: 'dup', jam: jam, nama: r.nama, sub: r.kelas || '', tag: 'Sudah' });
+        beep('dup');
+      } else {
+        showRes('err', 'Gagal', '', r.message || 'Terjadi kesalahan.', true);
+        addHist({ k: 'err', jam: jam, nama: 'NISN ' + nisn, sub: r.message || '', tag: 'Gagal' });
+        beep('err');
+      }
+    });
+  }
+
+  /* ---------- kamera ---------- */
+  var qr = null, running = false, cameras = [], camIdx = -1, wake = null;
+  function libOk() { return typeof Html5Qrcode !== 'undefined'; }
+  function camMsg(t) { var m = $('camMsg'); m.textContent = t || ''; m.style.display = t ? 'flex' : 'none'; }
+  function camUi() { $('bCam').textContent = running ? 'Hentikan kamera' : 'Mulai kamera'; }
+  function keepAwake() {
+    try { if (navigator.wakeLock && !wake) navigator.wakeLock.request('screen').then(function (w) { wake = w; w.addEventListener('release', function () { wake = null; }); }).catch(function () {}); } catch (e) {}
+  }
+  function loadCams() {
+    if (!libOk() || !Html5Qrcode.getCameras) return;
+    Html5Qrcode.getCameras().then(function (l) { cameras = l || []; }).catch(function () {});
+  }
+  function startCam() {
+    if (!libOk()) { camMsg('Pustaka kamera gagal dimuat (cek internet). Gunakan kolom NISN di bawah untuk mencatat manual.'); return Promise.resolve(); }
+    if (running) return Promise.resolve();
+    try { if (!qr) qr = new Html5Qrcode('reader', { verbose: false }); } catch (e) { camMsg('Kamera tidak didukung di browser ini.'); return Promise.resolve(); }
+    var target = (camIdx >= 0 && cameras[camIdx]) ? cameras[camIdx].id : { facingMode: 'environment' };
+    var box = function (w, h) { var s = Math.floor(Math.min(w, h) * 0.72); return { width: s, height: s }; };
+    camMsg('Membuka kamera...');
+    return qr.start(target, { fps: 10, qrbox: box }, function (txt) { handle(txt, false); }, function () {})
+      .then(function () { running = true; camMsg(''); camUi(); keepAwake(); if (!cameras.length) loadCams(); })
+      .catch(function (err) { running = false; camUi(); camMsg('Kamera tidak bisa dibuka: ' + ((err && err.message) || err) + ' - izinkan akses kamera lalu tekan Mulai kamera.'); });
+  }
+  function stopCam() {
+    if (!qr || !running) return Promise.resolve();
+    return qr.stop().then(function () { running = false; camUi(); camMsg('Kamera dihentikan'); }).catch(function () { running = false; camUi(); });
+  }
+
+  /* ---------- pengaturan ---------- */
+  function openDlg(msg) {
+    $('cfgUrl').value = cfg.url; $('cfgKey').value = cfg.key;
+    $('cfgMsg').textContent = msg || ''; $('cfgMsg').style.color = 'var(--warn)';
+    if ($('dlg').showModal) { if (!$('dlg').open) $('dlg').showModal(); } else { $('dlg').setAttribute('open', ''); }
+  }
+  function readDlg() { return { url: $('cfgUrl').value.trim(), key: $('cfgKey').value.trim() }; }
+
+  $('chip').onclick = function () { openDlg(''); };
+  $('cfgClose').onclick = function () { $('dlg').close ? $('dlg').close() : $('dlg').removeAttribute('open'); };
+  $('cfgSave').onclick = function () {
+    var v = readDlg();
+    if (!v.url || !v.key) { $('cfgMsg').style.color = 'var(--err)'; $('cfgMsg').textContent = 'Alamat dan kode petugas harus diisi.'; return; }
+    cfg = v; lsSet(LS.url, v.url); lsSet(LS.key, v.key); refreshChip();
+    $('cfgMsg').style.color = 'var(--ok)'; $('cfgMsg').textContent = 'Tersimpan.';
+    setTimeout(function () { $('dlg').close ? $('dlg').close() : $('dlg').removeAttribute('open'); if (!running) startCam(); }, 500);
+  };
+  $('cfgTest').onclick = function () {
+    var v = readDlg(); var old = cfg; cfg = v;
+    $('cfgMsg').style.color = 'var(--muted)'; $('cfgMsg').textContent = 'Menguji koneksi...';
+    callApi({ api: 'ping' }).then(function (r) {
+      cfg = old;
+      $('cfgMsg').style.color = r.success ? 'var(--ok)' : 'var(--err)';
+      $('cfgMsg').textContent = r.message || (r.success ? 'Terhubung.' : 'Gagal.');
+    });
+  };
+
+  $('mMasuk').onclick = function () { setMode('masuk'); };
+  $('mPulang').onclick = function () { setMode('pulang'); };
+  $('bCam').onclick = function () { running ? stopCam() : startCam(); };
+  $('bSwap').onclick = function () {
+    if (!libOk()) return;
+    if (cameras.length < 2) { camMsg(cameras.length ? 'Hanya ada satu kamera di perangkat ini.' : 'Mulai kamera dulu, lalu coba ganti.'); setTimeout(function () { if (running) camMsg(''); }, 2500); return; }
+    if (camIdx < 0) {
+      camIdx = 0;
+      for (var i = 0; i < cameras.length; i++) { if (/back|rear|belakang|environment/i.test(cameras[i].label || '')) { camIdx = i; break; } }
+    }
+    camIdx = (camIdx + 1) % cameras.length;
+    stopCam().then(startCam);
+  };
+  $('manual').onsubmit = function (e) {
+    e.preventDefault();
+    var v = $('nisn').value.trim(); if (!v) return;
+    handle(v, true); $('nisn').value = '';
+  };
+
+  /* ---------- scanner USB (berfungsi seperti keyboard): kursor selalu siap di kolom NISN ---------- */
+  var finePointer = false;
+  try { finePointer = window.matchMedia('(pointer: fine)').matches; } catch (e) {}
+  function focusNisn() {
+    if (!finePointer) return;                       // di HP tidak dipaksa, supaya keyboard tidak muncul terus
+    var d = $('dlg'); if (d && d.open) return;
+    try { $('nisn').focus(); } catch (e) {}
+  }
+  document.addEventListener('keydown', function (e) {
+    var d = $('dlg'); if (d && d.open) return;
+    var t = e.target && e.target.tagName;
+    if (t === 'INPUT' || t === 'TEXTAREA' || e.ctrlKey || e.metaKey || e.altKey) return;
+    if (e.key && e.key.length === 1) { try { $('nisn').focus(); } catch (x) {} }   // ketikan dari scanner masuk ke kolom NISN
+  });
+  $('manual').addEventListener('submit', function () { setTimeout(focusNisn, 50); });
+  $('cfgClose').addEventListener('click', function () { setTimeout(focusNisn, 50); });
+
+  /* ---------- mulai ---------- */
+  setMode(mode); refreshChip(); camUi();
+  if (!configured()) { openDlg('Isi alamat Web App dan kode petugas untuk memulai.'); }
+  else { startCam(); focusNisn(); }
+  document.addEventListener('visibilitychange', function () { if (document.visibilityState === 'visible') keepAwake(); });
+})();
+</script>
+</body>
+</html>
